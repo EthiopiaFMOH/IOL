@@ -806,7 +806,7 @@ function setupApp () {
                 return
               }
               if(return_data.status == "OK") {
-                if(return_data.response.uid) {
+                if(typeof return_data.response.uid !== "undefined") {
                   parent_id = return_data.response.uid
                   console.log("In IF{{{{{{{{{{FROM PHCU: uid: }}}}}}}}} " + parent_id)
                 }
@@ -860,7 +860,7 @@ function setupApp () {
                 return
               }
               if(return_data.status == "OK") {
-                if(return_data.response.uid) {
+                if(typeof return_data.response.uid !== "undefined") {
                   parent_id = return_data.response.uid
                   console.log("In response uid{{{{{{{{{{FROM PHCU: uid: }}}}}}}}} " + parent_id)
                 }
@@ -908,7 +908,7 @@ function setupApp () {
         //console.log(return_data.response.errorReports)
         //responseBody = JSON.stringify(return_data);
         if(return_data.status == "OK") {
-          if(return_data.response.uid) {
+          if(typeof return_data.response.uid !== "undefined") {
             parent_id = return_data.response.uid
           }
         } else {
@@ -1017,6 +1017,7 @@ function setupApp () {
   
   let organisationUnits = []
   for(var n = 0; n < sites.sites.length; n++) {
+    if(sites.sites[n].createdAt != sites.sites[n].updatedAt) {
     
     //Fetch organisation unit information
     var ou_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnit_req + 
@@ -1032,7 +1033,7 @@ function setupApp () {
         return_data = data;
       })
 
-    //if(return_data.organisationUnits.length > 0) {
+    if(return_data.organisationUnits.length > 0) {
       console.log("\n\nThe request on line# 1036: " + mediatorConfig.config.DHIS2baseurl + organisationUnit_req + 
                   organisationUnitSearch_req_code + sites.sites[n].properties.reports_to);
       console.log("\nThe response: " + JSON.stringify(return_data))
@@ -1082,6 +1083,8 @@ function setupApp () {
     orchestrations.push(utils.buildOrchestration('Fetch specific site and do data transformation', 
                           new Date().getTime(), '', '', '', '', orchestrationResponse, 
                           JSON.stringify(organisationUnit)))
+    }
+   }
   }  
 
   const dhisImport = {
