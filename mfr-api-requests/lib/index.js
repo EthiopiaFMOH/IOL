@@ -1054,9 +1054,7 @@ function setupApp () {
       if(return_data.organisationUnits.length > 0) {
         var org_unit_id = return_data.organisationUnits[0].id
         var changeParent = true;
-
-
-
+      
         //Was orgunit already in phcu relation?
         var orgUnit_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnit_req + "/" + 
                                           org_unit_id + '.json', {
@@ -1084,12 +1082,156 @@ function setupApp () {
           return_data = data;
         })
 
-        if(return_data.name.endsWith("PHCU") && return_data.name.startsWith(orgUnit_name)) {
-          //Was already in a phcu relationship and was a parent
-          if(typeof sites.sites[n].properties.isphcu !== "undefined" && sites.sites[n].properties.isphcu) {
-            if(typeof sites.sites[n].properties.phcuparentid === "undefined") {
-              changeParent = false;
+        if(return_data.name.endsWith("PHCU")) {
+          if(return_data.name.startsWith(orgUnit_name)) {
+            //Was already in a phcu relationship and was a parent
+            if(typeof sites.sites[n].properties.isphcu !== "undefined" && sites.sites[n].properties.isphcu) {
+              if(typeof sites.sites[n].properties.phcuparentid === "undefined" && return_data.parent.id == parent_id) {
+                changeParent = false;
+              } else if(typeof sites.sites[n].properties.phcuparentid === "undefined" && return_data.parent.id != parent_id) {
+                //Moved to a different phcu relation as a parent
+                //Change the parent id of the phcu 
+                var phcu_to_update = {
+                  "id": return_data.id,
+                  "name": return_data.name,
+                  "code": return_data.code,
+                  "parent":{
+                    "id": parent_id
+                  }
+                }
+                insert_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnitUpdate_req, {
+                  method: "POST",
+                  headers: {
+                    "Authorization":"Basic " + encodedDHIS2,
+                    "Content-Type":"application/json"
+                  },
+                  body: JSON.stringify(phcu_to_update)
+                  
+                })
+                .then(response => response.json())
+                .then(function handleData(data) {
+                  return_data = data;
+                });
+                //No need to change parent then
+                changeParent = false;
+
+              } else if(typeof sites.sites[n].properties.phcuparentid !== "undefined" && return_data.parent.id == parent_id) {
+                //Become a child in a phcu relation that it was already in
+                 //No need to change parent of course, but we need to find the new parent ?????
+                 changeParent = false;
+              } else if(typeof sites.sites[n].properties.phcuparentid !== "undefined" && return_data.parent.id != parent_id) {
+                //Become a child in a new phcu relation
+                //Get parent info of the updated reports_to as itself is under the phcu
+                var reports_to_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnit_req + "/" + 
+                                          parent_id + '.json', {
+                method: "GET",
+                headers: {
+                  "Authorization":"Basic " + encodedDHIS2
+                }
+                })
+                .then(response => response.json())
+                .then(function handleData(data) {
+                  return_data = data;
+                })
+                parent_id = return_data.parent.id;
+                //then leave the parent_id to be updated
+              }
             }
+          } else {
+            //Was already in a phcu relationship and was a child
+            if(typeof sites.sites[n].properties.isphcu !== "undefined" && sites.sites[n].properties.isphcu) {
+              //It is also currently in a phcu relation
+              if(typeof sites.sites[n].properties.phcuparentid !== "undefined" && return_data.parent.id == parent_id) {
+                changeParent = false;
+              } else if(typeof sites.sites[n].properties.phcuparentid !== "undefined" && return_data.parent.id != parent_id) {
+                //Still a child in a phcu but it has changed parent
+                //Get parent info of the updated reports_to as itself is under the phcu
+                var reportsto_detail_child = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnit_req + "/" + 
+                                                    parent_id + '.json', {
+                method: "GET",
+                headers: {
+                  "Authorization":"Basic " + encodedDHIS2
+                }
+                })
+                .then(response => response.json())
+                .then(function handleData(data) {
+                  return_data = data;
+                })
+                parent_id = return_data.parent.id;
+                //then leave the parent_id to be updated
+
+              } else if(typeof sites.sites[n].properties.phcuparentid === "undefined" && return_data.parent.id == parent_id){
+                //Has become a parent in the phcu it was previously a child
+                //Change name and code of the phcu parent, No need to change parent info
+                var updatephcu_child = {
+                  "id": return_data.id,
+                  "name": sites.sites[n].name + " PHCU",
+                  "shortName": sites.sites[n].properties.shortName + " PHCU",
+                  "code": sites.sites[n].id + "PHCU",
+                }
+                insert_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnitUpdate_req, {
+                  method: "POST",
+                  headers: {
+                    "Authorization":"Basic " + encodedDHIS2,
+                    "Content-Type":"application/json"
+                  },
+                  body: JSON.stringify(updatephcu_child)
+                  
+                })
+                .then(response => response.json())
+                .then(function handleData(data) {
+                  return_data = data;
+                });
+                changeParent = false;
+               
+              } else if(typeof sites.sites[n].properties.phcuparentid === "undefined" && return_data.parent.id != parent_id){
+                //Has become a parent in a new phcu relation
+                //Create a new phcu orgUnit and update the current facility
+                var opening_date
+                if(typeof sites.sites[n].properties.year_opened !== 'undefined') {
+                  var date_arr = sites.sites[n].properties.year_opened.split("/");
+                  opening_date = date_arr[2] + '-' + date_arr[1] + '-' + date_arr[0]
+                } else {
+                  opening_date = '1980-06-15'
+                }
+                var newOrganisationUnit_to_add = {
+                  "name": sites.sites[n].name + " PHCU",
+                  "openingDate": opening_date,
+                  "shortName": sites.sites[n].properties.shortName + " PHCU",
+                  "code": sites.sites[n].id + "PHCU",
+                  "parent":{
+                    "id": parent_id
+                  }
+                }
+                try{
+                  insert_detail = await fetch(mediatorConfig.config.DHIS2baseurl + organisationUnit_req, {
+                    method: "POST",
+                    headers: {
+                      "Authorization":"Basic " + encodedDHIS2,
+                      "Content-Type":"application/json"
+                    },
+                    body: JSON.stringify(newOrganisationUnit_to_add)
+  
+                  })
+                  .then(response => response.json())
+                  .then(function handleData(data) {
+                    return_data = data;
+                  })
+                } catch(err) {
+                  console.log("Register Organisation unit info: " + err)
+                  return
+                }
+                if(return_data.status == "OK") {
+                  if(typeof return_data.response.uid !== "undefined") {
+                    parent_id = return_data.response.uid
+                    //console.log("In response uid{{{{{{{{{{FROM PHCU: uid: }}}}}}}}} " + parent_id)
+                  }
+                } else {
+                  console.log("\n---------FROM UPDATE case: Could NOT register into DHIS2------------------\n");
+                }
+              } 
+            }
+
           }
         } else {
           //Was NOT in a phcu relation
@@ -1162,18 +1304,7 @@ function setupApp () {
           }
         }
 
-
-
-         
-
-        
-
-
-        
       }
-
-
-
 
         var opening_date
         if(typeof sites.sites[n].properties.year_opened !== 'undefined') {
@@ -1182,41 +1313,44 @@ function setupApp () {
         } else {
           opening_date = '1980-06-15'
         }
-        if(changeParent) {
-          var organisationUnit = {
-            "id": org_unit_id,
-            "name": sites.sites[n].name, 
-            "openingDate": opening_date,
-            "shortName": sites.sites[n].properties.short_name ? sites.sites[n].properties.short_name : 
-                          utils.returnShortName(sites.sites[n].name), 
-            "latitude": sites.sites[n].lat,
-            "longitude": sites.sites[n].long,
-            "code": sites.sites[n].id,
-            "phoneNumber": sites.sites[n].facility__official_phone_number,
-            "parent":{
-              "id": parent_id
+        //if(changeFields) {
+          if(changeParent) {
+            var organisationUnit = {
+              "id": org_unit_id,
+              "name": sites.sites[n].name, 
+              "openingDate": opening_date,
+              "shortName": sites.sites[n].properties.short_name ? sites.sites[n].properties.short_name : 
+                            utils.returnShortName(sites.sites[n].name), 
+              "latitude": sites.sites[n].lat,
+              "longitude": sites.sites[n].long,
+              "code": sites.sites[n].id,
+              "phoneNumber": sites.sites[n].facility__official_phone_number,
+              "parent":{
+                "id": parent_id
+              }
+            }
+          } else {
+            var organisationUnit = {
+              "id": org_unit_id,
+              "name": sites.sites[n].name, 
+              "openingDate": opening_date,
+              "shortName": sites.sites[n].properties.short_name ? sites.sites[n].properties.short_name : 
+                            utils.returnShortName(sites.sites[n].name), 
+              "latitude": sites.sites[n].lat,
+              "longitude": sites.sites[n].long,
+              "code": sites.sites[n].id,
+              "phoneNumber": sites.sites[n].facility__official_phone_number
             }
           }
-        } else {
-          var organisationUnit = {
-            "id": org_unit_id,
-            "name": sites.sites[n].name, 
-            "openingDate": opening_date,
-            "shortName": sites.sites[n].properties.short_name ? sites.sites[n].properties.short_name : 
-                          utils.returnShortName(sites.sites[n].name), 
-            "latitude": sites.sites[n].lat,
-            "longitude": sites.sites[n].long,
-            "code": sites.sites[n].id,
-            "phoneNumber": sites.sites[n].facility__official_phone_number
-          }
-        }
-    
-        organisationUnits.push(organisationUnit)
+      
+          organisationUnits.push(organisationUnit)
+       
 
-        orchestrationResponse = {}//{ statusCode: 200, headers: headers }
-        orchestrations.push(utils.buildOrchestration('Fetch specific site and do data transformation', 
-                            new Date().getTime(), '', '', '', '', orchestrationResponse, 
-                            JSON.stringify(organisationUnit)))
+          orchestrationResponse = {}//{ statusCode: 200, headers: headers }
+          orchestrations.push(utils.buildOrchestration('Fetch specific site and do data transformation', 
+                              new Date().getTime(), '', '', '', '', orchestrationResponse, 
+                              JSON.stringify(organisationUnit)))
+        //}
       }
     }
    }
