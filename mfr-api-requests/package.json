@@ -11,7 +11,7 @@
     "body-parser": "^1.10.2",
     "confit": "^2.0.3",
     "data-tree": "^1.2.4",
-    "date-and-time": "^0.6.2",
+    "date-and-time": "^0.14.2",
     "dateformat": "^4.5.1",
     "express": "^4.16.3",
     "express-remove-route": "^0.1.1",
