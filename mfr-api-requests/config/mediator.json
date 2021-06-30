@@ -15,7 +15,7 @@
         "matchContentTypes": [],
         "routes": [
           {
-            "name": "fetch Route",
+            "name": "sync route",
             "host": "localhost",
             "port": "3000",
             "primary": true,
@@ -30,7 +30,7 @@
     ],
     "endpoints": [
       {
-        "name": "fetch Route",
+        "name": "sync route",
         "host": "localhost",
         "path": "/",
         "port": "3001",
@@ -47,9 +47,9 @@
         "template": []
       },
       {
-        "param": "collectionname",
-        "displayName": "Collection Name",
-        "description": "The name of the required MFR collection",
+        "param": "rootid",
+        "displayName": "Root Node ID",
+        "description": "The id of the root node",
         "type": "string",
         "template": []
       },
@@ -63,8 +63,8 @@
 
     ],
     "config": {
-      "baseurl": "http://api.mfr.sandboxaddis.com",
-      "collectionname": "MFR-PRODUCTION",
+      "baseurl": "http://3.12.154.93:8080/gofr_empty/fhir",
+      "rootid": "faa6bfa5-59ee-49ac-bf77-895ce2e270d3",
       "DHIS2baseurl": "http://localhost:8081"
     }
   }

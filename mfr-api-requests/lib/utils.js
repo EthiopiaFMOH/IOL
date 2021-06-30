@@ -17,7 +17,7 @@ exports.doencode = function() {
 exports.doencodeDHIS2 = function() {
   const encode = require('nodejs-base64-encode');
   var username = "admin";
-  var password = "district";
+  var password = "X7$8CFkUZ@";
   var tobeencoded = username + ":" + password;
   return encode.encode(tobeencoded, 'base64');
 }

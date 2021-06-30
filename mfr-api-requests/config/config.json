@@ -1,7 +1,7 @@
 {
   "port": 4003,
   "heartbeat": true,
-  "register": true,
+  "register": false,
   "host": "",
   "endpoints": [],
   "log_level": "info",
@@ -22,7 +22,7 @@
       {
         "name": "Fetch",
         "host": "localhost",
-        "path": "/fetch",
+        "path": "/sync",
         "port": "4002",
         "primary": true,
         "type": "http"
@@ -37,8 +37,8 @@
         "array": true,
         "template": [
           {
-            "param": "fetch",
-            "displayName": "Fetch",
+            "param": "sync",
+            "displayName": "Sync",
             "description": "Should this record be fetched?",
             "type": "bool"
           }
