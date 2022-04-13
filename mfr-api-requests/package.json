@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "Promise": "^1.0.5",
-    "async": "^1.4.2",
+    "async": "^3.2.2",
     "body-parser": "^1.10.2",
     "confit": "^2.0.3",
     "data-tree": "^1.2.4",
