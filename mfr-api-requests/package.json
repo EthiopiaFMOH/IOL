@@ -8,12 +8,12 @@
   "dependencies": {
     "Promise": "^1.0.5",
     "async": "^1.4.2",
-    "body-parser": "^1.10.2",
+    "body-parser": "^1.20.1",
     "confit": "^2.0.3",
     "data-tree": "^1.2.4",
     "date-and-time": "^0.6.2",
     "dateformat": "^4.5.1",
-    "express": "^4.16.3",
+    "express": "^4.18.2",
     "express-remove-route": "^0.1.1",
     "graceful-fs": "^4.1.2",
     "latest-version": "^2.0.0",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "jshint": "^2.9.2",
     "rewire": "^2.5.1",
-    "tap": "^2.3.4"
+    "tap": "^16.3.2"
   },
   "author": "Biniyam"
 }
